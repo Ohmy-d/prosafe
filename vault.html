@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vault</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0e0e0e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ProSafe">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & VARS ───────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0e0e0e;--surface:rgba(255,255,255,0.07);--border:rgba(255,255,255,0.11);
+  --text:#f0f0f0;--sub:#777;--accent:#00e5a0;--danger:#ff4d4d;
+  --r:50px;
+  --cat-image:#a78bfa;--cat-video:#fb923c;--cat-audio:#60a5fa;
+  --cat-doc:#f472b6;--cat-archive:#facc15;--cat-code:#34d399;
+  --cat-anim:#f87171;--cat-other:#9ca3af;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+body.bg-video-active{background:transparent}
+
+/* ── BACKGROUND VIDEO ────────────────────────────── */
+.bg-video{position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:cover;z-index:-1;opacity:.55}
+
+/* ── TOP BAR ─────────────────────────────────────── */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  padding:10px 14px 8px;
+  display:flex;flex-direction:column;gap:8px;
+  background:rgba(14,14,14,0.92);
+  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  border-bottom:1px solid var(--border);
+}
+.topbar-row1{
+  display:flex;align-items:center;gap:8px;
+}
+.topbar-logo{
+  display:flex;align-items:center;gap:7px;flex-shrink:0;
+  font-size:16px;font-weight:700;letter-spacing:.4px;color:var(--accent);
+}
+.topbar-logo svg{flex-shrink:0}
+.topbar-spacer{flex:1}
+
+/* ── SEARCH BAR (always full-width, second row) ──── */
+.search-wrap{
+  position:relative;display:flex;align-items:center;
+}
+.search-wrap input{
+  width:100%;padding:8px 36px 8px 34px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);color:var(--text);font-family:inherit;font-size:13px;
+  outline:none;cursor:text;
+  transition:border-color .22s, box-shadow .22s;
+}
+.search-wrap input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(0,229,160,.1);
+}
+.search-wrap .s-icon{
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  pointer-events:none;opacity:.45;
+}
+.search-wrap .s-clear{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--sub);cursor:pointer;
+  display:none;padding:2px;
+}
+.search-wrap input:not(:placeholder-shown) ~ .s-clear{display:block}
+
+/* ── TOP ACTIONS ─────────────────────────────────── */
+.topbar-actions{display:flex;gap:6px;flex-shrink:0;align-items:center}
+.btn{
+  display:flex;align-items:center;gap:5px;
+  padding:7px 13px;border-radius:var(--r);
+  border:1px solid var(--border);background:var(--surface);
+  color:var(--text);font-family:inherit;font-size:13px;font-weight:500;
+  cursor:pointer;transition:background .18s,border .18s,transform .1s;white-space:nowrap;
+}
+.btn:active{transform:scale(.95)}
+.btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.22)}
+.btn.accent{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600}
+.btn.accent:hover{background:#00ffb3;border-color:#00ffb3}
+.btn.danger{background:rgba(255,77,77,.14);border-color:var(--danger);color:var(--danger)}
+.btn.danger:hover{background:rgba(255,77,77,.26)}
+.btn.icon-only{padding:7px;gap:0}
+
+/* ── STORAGE BAR ─────────────────────────────────── */
+.storage-row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 16px;border-bottom:1px solid var(--border);
+  font-size:11px;color:var(--sub);
+}
+.storage-track{flex:1;height:3px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}
+.storage-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .6s ease}
+
+/* ── CATEGORY TABS ───────────────────────────────── */
+.cat-bar{
+  display:flex;gap:6px;padding:10px 14px;
+  overflow-x:auto;border-bottom:1px solid var(--border);
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+.cat-bar::-webkit-scrollbar{display:none}
+.cat-pill{
+  display:flex;align-items:center;gap:5px;flex-shrink:0;
+  padding:5px 12px;border-radius:var(--r);
+  border:1px solid var(--border);background:var(--surface);
+  color:var(--sub);font-size:12px;font-weight:500;cursor:pointer;
+  transition:all .2s;white-space:nowrap;
+}
+.cat-pill:hover{border-color:rgba(255,255,255,.25);color:var(--text)}
+.cat-pill.active{color:#000;font-weight:600;border-color:transparent}
+.cat-pill .pill-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cat-pill .pill-count{
+  background:rgba(0,0,0,.25);border-radius:50px;
+  padding:1px 6px;font-size:10px;
+}
+
+/* ── SELECTION TOOLBAR ───────────────────────────── */
+.sel-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:500;
+  display:flex;align-items:center;gap:10px;
+  padding:14px 18px;
+  background:rgba(12,12,12,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+.sel-bar.visible{transform:translateY(0)}
+.sel-count{flex:1;font-size:14px;font-weight:600;color:var(--text)}
+.sel-count span{color:var(--accent)}
+
+/* ── EMPTY STATE ─────────────────────────────────── */
+.empty{
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:90px 24px;gap:14px;color:var(--sub);text-align:center;
+}
+.empty.show{display:flex}
+.empty p{font-size:15px;line-height:1.5}
+
+/* ── GRID ────────────────────────────────────────── */
+.grid-wrap{padding:14px 12px}
+.group-label{
+  font-size:10px;font-weight:700;letter-spacing:1px;
+  color:var(--sub);padding:12px 2px 7px;text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;
+}
+.group-label::after{content:'';flex:1;height:1px;background:var(--border);border-radius:1px}
+.photo-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6px;margin-bottom:4px;
+}
+@media(min-width:480px){.photo-grid{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:700px){.photo-grid{grid-template-columns:repeat(5,1fr)}}
+@media(min-width:1024px){.photo-grid{grid-template-columns:repeat(6,1fr);gap:8px}}
+
+/* ── TILE ────────────────────────────────────────── */
+.tile{
+  position:relative;overflow:hidden;border-radius:10px;
+  background:#1a1a1a;cursor:pointer;aspect-ratio:1/1;
+  transition:transform .18s,box-shadow .18s;
+  user-select:none;
+  border:1px solid rgba(255,255,255,0.05);
+}
+.tile:hover{transform:scale(1.03);z-index:2;box-shadow:0 8px 28px rgba(0,0,0,.65)}
+.tile.selected{outline:2.5px solid var(--accent);outline-offset:-1px}
+.tile.selected::before{
+  content:'';position:absolute;inset:0;background:rgba(0,229,160,.12);z-index:1;pointer-events:none;
+}
+
+.tile img,.tile video{
+  width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;
+}
+
+/* checkbox */
+.tile-check{
+  position:absolute;top:7px;left:7px;z-index:3;
+  width:22px;height:22px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.7);background:rgba(0,0,0,.4);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .18s;opacity:0;
+}
+.select-mode .tile-check{opacity:1}
+.tile.selected .tile-check{background:var(--accent);border-color:var(--accent)}
+.tile-check svg{opacity:0;transition:opacity .15s}
+.tile.selected .tile-check svg{opacity:1}
+
+/* doc tile */
+.tile.doc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:14px}
+.tile.doc .file-icon svg{filter:drop-shadow(0 2px 8px currentColor)}
+.tile.doc .fname{font-size:10px;text-align:center;color:var(--sub);word-break:break-all;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.4}
+.tile.doc .fext{font-size:9px;font-weight:700;letter-spacing:.5px;opacity:.6;margin-top:2px}
+
+/* overlay */
+.tile-overlay{
+  position:absolute;inset:0;z-index:2;
+  background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.1) 50%,transparent 100%);
+  opacity:0;transition:opacity .2s;
+  display:flex;flex-direction:column;justify-content:flex-end;padding:8px 7px;
+}
+.tile:hover .tile-overlay,.select-mode .tile:hover .tile-overlay{opacity:1}
+.tile-name{font-size:10px;font-weight:500;color:#fff;word-break:break-all;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
+.tile-meta{font-size:9px;color:rgba(255,255,255,.55);margin-top:2px}
+.tile-acts{display:inline;gap:3px;margin-top:10px;flex-wrap:wrap}
+.ta{
+  display:flex;align-items:center;gap:3px;
+  padding:1.5px 4px;border-radius:var(--r);font-size:6px;font-weight:300;
+  border:none;cursor:pointer;font-family:inherit;transition:opacity .15s,transform .1s;
+}
+.ta:active{transform:scale(.92)}
+.ta.dl{background:var(--accent);color:#000}
+.ta.rn{background:rgba(255,255,255,.22);color:#fff}
+.ta.rm{background:rgba(255,77,77,.3);color:#ffa0a0}
+
+/* ── SIDEBAR ─────────────────────────────────────── */
+.sidebar{
+  height:100%;width:0;position:fixed;z-index:600;
+  top:0;left:0;background:rgba(8,8,8,.98);
+  backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+  overflow:hidden;
+  transition:width .34s cubic-bezier(.4,0,.2,1);
+  border-right:1px solid var(--border);
+}
+.sidebar-inner{width:270px;padding-top:60px}
+.sidebar a{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 22px;font-size:14px;color:var(--text);
+  text-decoration:none;transition:background .15s;cursor:pointer;
+  border-radius:0;
+}
+.sidebar a:hover{background:rgba(255,255,255,.06)}
+.sidebar a svg{flex-shrink:0;opacity:.7}
+.sidebar hr{border:none;border-top:1px solid var(--border);margin:4px 18px}
+.sidebar-title{padding:8px 22px 4px;font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--sub);text-transform:uppercase}
+.closebtn{
+  position:absolute;top:14px;right:16px;
+  background:none;border:none;color:var(--sub);cursor:pointer;padding:6px;
+}
+.sidebar-overlay{
+  display:none;position:fixed;inset:0;z-index:599;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(2px);
+}
+.sidebar-overlay.show{display:block}
+
+/* ── LIGHTBOX ────────────────────────────────────── */
+.lightbox{
+  display:none;position:fixed;inset:0;z-index:700;
+  background:rgba(0,0,0,.93);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  align-items:center;justify-content:center;flex-direction:column;gap:14px;
+}
+.lightbox.open{display:flex}
+.lightbox img{max-width:94vw;max-height:80vh;border-radius:12px;object-fit:contain}
+.lightbox video{max-width:94vw;max-height:80vh;border-radius:12px}
+.lb-close{
+  position:absolute;top:16px;right:18px;
+  background:rgba(255,255,255,.12);border:1px solid var(--border);color:#fff;
+  width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .18s;
+}
+.lb-close:hover{background:rgba(255,255,255,.22)}
+.lb-meta{display:flex;flex-direction:column;align-items:center;gap:3px}
+.lb-name{font-size:13px;color:var(--sub)}
+.lb-acts{display:flex;gap:8px;margin-top:4px}
+
+.lb-nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,.12);border:1px solid var(--border);color:#fff;
+  width:40px;height:40px;border-radius:50%;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .18s;z-index:1;
+}
+.lb-nav:hover{background:rgba(255,255,255,.26)}
+.lb-nav-prev{left:14px}
+.lb-nav-next{right:14px}
+
+/* ── THEME SHEET ─────────────────────────────────── */
+.sheet-overlay{
+  display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(4px);
+}
+.sheet-overlay.show{display:block}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:801;
+  background:#111;border:1px solid var(--border);
+  border-radius:22px 22px 0 0;padding:20px 20px 36px;
+  transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);
+}
+.sheet.open{transform:translateY(0)}
+.sheet-handle{width:38px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 18px}
+.sheet-title{font-size:16px;font-weight:600;margin-bottom:16px}
+.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.theme-card{
+  border:1px solid var(--border);border-radius:14px;padding:16px 12px;
+  cursor:pointer;transition:border-color .2s,background .2s;text-align:center;
+  background:var(--surface);
+}
+.theme-card:hover,.theme-card.active{border-color:var(--accent);background:rgba(0,229,160,.06)}
+.theme-card .tc-icon{font-size:28px;margin-bottom:8px}
+.theme-card .tc-name{font-size:13px;font-weight:600}
+.theme-card .tc-desc{font-size:11px;color:var(--sub);margin-top:3px}
+.theme-card.active .tc-name{color:var(--accent)}
+
+/* ── PWA BANNER ──────────────────────────────────── */
+.pwa-banner{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
+  padding:14px 18px;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);
+  border-top:1px solid rgba(0,229,160,.25);
+  align-items:center;gap:12px;font-family:'DM Sans',sans-serif;
+}
+.pwa-banner.show{display:flex}
+
+/* ── TOAST ───────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:rgba(30,30,30,.96);border:1px solid var(--border);
+  border-radius:50px;padding:9px 18px;font-size:13px;color:var(--text);
+  opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:900;
+  white-space:nowrap;backdrop-filter:blur(12px);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+button {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 200;
+      padding: 7px 18px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      color: #fff;
+      background: transparent;
+      outline: none;
+      letter-spacing: 0.03em;
+      -webkit-tap-highlight-color: transparent;
+    }
+ .slide-btn {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .slide-btn::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -120%;
+      width: 60%;
+      height: 200%;
+      background: linear-gradient(
+        105deg,
+        transparent 20%,
+        rgba(255,255,255,0.18) 50%,
+        transparent 80%
+      );
+      transform: skewX(-20deg);
+      transition: left 0.7s ease;
+    }
+    .slide-btn:hover::before {
+      left: 130%;
+    }
+    
+      .rotate-btn {
+      background: #0a0a0f;
+      color: #fff;
+      z-index: 0;
+    }
+    .rotate-btn::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 100px;
+      background: conic-gradient(
+        #00f7ff,
+        #7c3aed,
+        #ec4899,
+        #00f7ff
+      );
+      z-index: -1;
+      animation: rotate 2.5s linear infinite;
+    }
+    .rotate-btn::after {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      border-radius: 100px;
+      background: #0a0a0f;
+      z-index: -1;
+    }
+    @keyframes rotate {
+      to { transform: rotate(360deg); }
+    }
+    
+     .glitch-btn {
+      background: #0f172a;
+      border: 1px solid #f43f5e;
+      color: #f43f5e;
+      font-family: 'Syne', sans-serif;
+      letter-spacing: 0.1em;
+    }
+    .glitch-btn:hover {
+      animation: glitch 0.3s steps(2) infinite;
+      color: #fff;
+      background: #f43f5e;
+      text-shadow: 2px 0 #00f7ff, -2px 0 #f43f5e;
+    }
+    @keyframes glitch {
+      0%   { transform: translate(0); }
+      20%  { transform: translate(-2px, 1px); }
+      40%  { transform: translate(2px, -1px); }
+      60%  { transform: translate(-1px, 2px); }
+      80%  { transform: translate(1px, -2px); }
+      100% { transform: translate(0); }
+    }
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND VIDEO placeholder (injected by theme) -->
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <!-- Row 1: logo + actions -->
+  <div class="topbar-row1">
+    <!-- Menu (moved to left) -->
+    <button class="btn icon-only" onclick="openNav()" title="Menu">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="topbar-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        <circle cx="12" cy="16" r="1" fill="var(--accent)" stroke="none"/>
+      </svg>
+      ProSafe
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <input type="file" id="picker" multiple hidden>
+      <!-- Add button -->
+      <button class="btn accent icon-only" onclick="document.getElementById('picker').click()" title="Add files">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <!-- Select toggle -->
+      <button class="btn icon-only" id="selectToggleBtn" title="Select files" onclick="toggleSelectMode()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      </button>
+      <!-- Lock -->
+      <button class="btn icon-only danger" onclick="lock()" title="Lock vault">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </button>
+    </div>
+  </div>
+  <!-- Row 2: search bar -->
+  <div class="search-wrap">
+    <svg class="s-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input id="search" type="search" placeholder="Search files…" autocomplete="off">
+    <button class="s-clear" id="sClear" title="Clear">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- STORAGE BAR -->
+<div class="storage-row">
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+  <span id="usage">0 MB used</span>
+  <div class="storage-track"><div class="storage-fill" id="sfill" style="width:0%"></div></div>
+  <span id="usagePct">0%</span>
+</div>
+
+<!-- CATEGORY TABS -->
+<div class="cat-bar" id="catBar">
+  <!-- filled by JS -->
+</div>
+
+<!-- EMPTY STATE -->
+<div class="empty" id="empty">
+  <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".25">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+  </svg>
+  <p>No files yet.<br>Tap <strong>Add</strong> to upload files.</p>
+</div>
+
+<!-- FILE GRID -->
+<div class="grid-wrap" id="gridWrap"></div>
+
+<!-- MULTI-SELECT BAR -->
+<div class="sel-bar" id="selBar">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+  <span class="sel-count"><span id="selCount">0</span> selected</span>
+  <button class="rotate-btn" onclick="selAll()" title="Select all">All</button>
+  <button class="rotate-btn" id="selDownBtn" onclick="downloadSelected()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Download
+  </button>
+  <button class="glitch-btn" id="selDelBtn" onclick="deleteSelected()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+    Delete
+  </button>
+  <button class="btn icon-only" onclick="toggleSelectMode()" title="Cancel">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="lbBgClick(event)">
+  <button class="lb-close" onclick="closeLB()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <button class="lb-nav lb-nav-prev" id="lbPrev" onclick="lbPrev()" style="display:none">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <img id="lbImg" src="" style="display:none" alt="">
+  <video id="lbVid" src="" controls style="display:none"></video>
+  <audio id="lbAud" src="" controls style="display:none"></audio>
+  <button class="lb-nav lb-nav-next" id="lbNext" onclick="lbNext()" style="display:none">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+  <div class="lb-meta">
+    <div class="lb-name" id="lbName"></div>
+    <div class="lb-acts">
+      <button class="rotate-btn" id="lbDl">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </button>
+      <button class="slide-btn" id="lbRn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Rename
+      </button>
+      <button class="glitch-btn" id="lbRm">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeNav()"></div>
+
+<!-- SIDEBAR -->
+<div id="mySidebar" class="sidebar">
+  <div class="sidebar-inner">
+    <button class="closebtn" onclick="closeNav()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+
+    <div class="sidebar-title">Appearance</div>
+    <a id="themeBtn" onclick="openThemeSheet()">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20A14.5 14.5 0 0 0 12 2z"/></svg>
+      Theme &amp; Background
+    </a>
+    <hr>
+
+    <div class="sidebar-title">Lock Method</div>
+    <a onclick="go('pt-s.html')">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="12" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+      Pattern Lock
+    </a>
+    <hr>
+    <a onclick="go('sp-v.html')">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      Voice Lock
+    </a>
+    <hr>
+    <a onclick="go('fp.html')">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2C6.48 2 2 6.48 2 12"/><path d="M12 6c3.31 0 6 2.69 6 6"/><path d="M12 10a2 2 0 0 1 2 2"/><path d="M6.34 6.34A8 8 0 0 0 4 12c0 2.46 1.11 4.66 2.86 6.14"/><path d="M12 18a6 6 0 0 0 4.24-1.76"/></svg>
+      Fingerprint Lock
+    </a>
+    <hr>
+    <a onclick="go('setup.html')">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Safe Setup
+    </a>
+  </div>
+</div>
+
+<!-- THEME SHEET -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeThemeSheet()"></div>
+<div class="sheet" id="themeSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Background Theme</div>
+  <div class="theme-grid">
+    <div class="theme-card" id="tc-none" onclick="setTheme('none')">
+      <div class="tc-icon">⬛</div>
+      <div class="tc-name">Dark</div>
+      <div class="tc-desc">Clean black background</div>
+    </div>
+    <div class="theme-card" id="tc-image" onclick="setTheme('image')">
+      <div class="tc-icon">🖼️</div>
+      <div class="tc-name">Image Fade</div>
+      <div class="tc-desc">Rotating photo wallpapers</div>
+    </div>
+    <div class="theme-card" id="tc-video" onclick="setTheme('video')">
+      <div class="tc-icon">🎞️</div>
+      <div class="tc-name">Video</div>
+      <div class="tc-desc">Live animated background</div>
+    </div>
+    <div class="theme-card" id="tc-gradient" onclick="setTheme('gradient')">
+      <div class="tc-icon">🌈</div>
+      <div class="tc-name">Gradient</div>
+      <div class="tc-desc">Animated color flow</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- PWA BANNER -->
+<div class="pwa-banner" id="pwa-banner" style="background:rgba(0,0,0.0);">
+  <img src="icon-192.png" style="width:40px;height:40px;border-radius:50px;flex-shrink:0" alt="">
+  <div style="flex:1">
+    <div style="font-size:14px;font-weight:600">Install ProSafe</div>
+    <div style="font-size:11px;color:var(--sub)">Add to home screen for offline use</div>
+  </div>
+  <button id="pwa-install-btn" class="btn accent" style="font-size:12px">Install</button>
+  <button id="pwa-dismiss" style="background:none;border:none;color:var(--sub);font-size:20px;cursor:pointer;padding:4px 8px">×</button>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   AUTH GUARD
+══════════════════════════════════════════════════ */
+(function(){
+  const KEY="vault_unlocked", TTL=5*60*1000;
+  const entry=sessionStorage.getItem(KEY);
+  if(!entry){sessionStorage.setItem("vault_redirect","vault.html");window.location.replace("index.html");throw 0}
+  if(Date.now()-parseInt(entry,10)>TTL){sessionStorage.removeItem(KEY);sessionStorage.setItem("vault_redirect","vault.html");window.location.replace("index.html");throw 0}
+})();
+
+/* ══════════════════════════════════════════════════
+   FILE CATEGORY SYSTEM
+══════════════════════════════════════════════════ */
+const CATS = {
+  image:   { label:"Images",    color:"var(--cat-image)",   icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>` },
+  video:   { label:"Videos",    color:"var(--cat-video)",   icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>` },
+  audio:   { label:"Audio",     color:"var(--cat-audio)",   icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>` },
+  doc:     { label:"Documents", color:"var(--cat-doc)",     icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>` },
+  archive: { label:"Archives",  color:"var(--cat-archive)", icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>` },
+  code:    { label:"Code",      color:"var(--cat-code)",    icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>` },
+  anim:    { label:"Animations",color:"var(--cat-anim)",    icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>` },
+  other:   { label:"Other",     color:"var(--cat-other)",   icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>` }
+};
+
+function getCat(file){
+  const t=file.type, n=file.name.toLowerCase();
+  if(t.startsWith("image/gif")||n.endsWith(".gif")||n.endsWith(".webp")&&t==="image/webp") return "anim";
+  if(t.startsWith("image/")) return "image";
+  if(t.startsWith("video/")) return "video";
+  if(t.startsWith("audio/")) return "audio";
+  if(/\.(zip|rar|7z|gz|tar|bz2|xz|cab|iso)$/.test(n)) return "archive";
+  if(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|rtf|odt|pages|numbers|csv)$/.test(n)) return "doc";
+  if(/\.(js|ts|html|css|json|xml|py|java|c|cpp|cs|go|rb|php|sh|sql|yaml|yml|md)$/.test(n)) return "code";
+  if(t.includes("pdf")||t.includes("word")||t.includes("excel")||t.includes("powerpoint")||t.includes("text")) return "doc";
+  if(t.includes("zip")||t.includes("compressed")||t.includes("archive")||t.includes("rar")) return "archive";
+  return "other";
+}
+
+/* Large SVG file-type icons for doc tiles */
+function fileIcon(cat, color){
+  const c = color||CATS[cat]?.color||"var(--cat-other)";
+  const icons = {
+    image:`<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+    video:`<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`,
+    audio:`<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
+    doc:`<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+    archive:`<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.5"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`,
+    code:`<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+    anim:`<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="${c}" stroke="none"/></svg>`,
+    other:`<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>`
+  };
+  return icons[cat]||icons.other;
+}
+
+/* ══════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════ */
+let db, selectMode=false, selected=new Set(), currentCat="all";
+let _lbFiles=[], _lbIdx=0;
+
+/* ══════════════════════════════════════════════════
+   INDEXEDDB
+══════════════════════════════════════════════════ */
+const REQ=indexedDB.open("VaultDB",1);
+REQ.onupgradeneeded=e=>{db=e.target.result;db.createObjectStore("files",{keyPath:"id"})};
+REQ.onsuccess=e=>{db=e.target.result;renderFiles();updateMeter()};
+function tx(m="readonly"){return db.transaction("files",m).objectStore("files")}
+function uid(){return crypto.randomUUID()}
+
+/* ══════════════════════════════════════════════════
+   UPLOAD
+══════════════════════════════════════════════════ */
+document.getElementById("picker").onchange=async e=>{
+  for(const f of e.target.files){
+    tx("readwrite").put({id:uid(),name:f.name,size:f.size,type:f.type,date:Date.now(),blob:f});
+  }
+  setTimeout(()=>{renderFiles();updateMeter()},120);
+  showToast(`${e.target.files.length} file${e.target.files.length>1?"s":""} added`);
+};
+
+/* ══════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════ */
+function renderFiles(){
+  const wrap=document.getElementById("gridWrap");
+  const empty=document.getElementById("empty");
+  const q=document.getElementById("search").value.toLowerCase().trim();
+
+  tx().getAll().onsuccess=e=>{
+    let all=e.target.result;
+
+    // Build category counts
+    const counts={all:all.length};
+    all.forEach(f=>{const c=getCat(f);counts[c]=(counts[c]||0)+1});
+    renderCatBar(counts);
+
+    let files=all
+      .filter(f=>currentCat==="all"||getCat(f)===currentCat)
+      .filter(f=>!q||f.name.toLowerCase().includes(q))
+      .sort((a,b)=>b.date-a.date);
+
+    _lbFiles=files.filter(f=>f.type.startsWith("image/")||f.type.startsWith("video/")||f.type.startsWith("audio/"));
+
+    wrap.innerHTML="";
+    if(!files.length){empty.classList.add("show");return}
+    empty.classList.remove("show");
+
+    // Group by date
+    const groups={};
+    files.forEach(f=>{
+      const d=new Date(f.date);
+      const key=d.toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"});
+      (groups[key]=groups[key]||[]).push(f);
+    });
+
+    Object.entries(groups).forEach(([label,items])=>{
+      const gl=document.createElement("div");
+      gl.className="group-label";gl.textContent=label;
+      wrap.appendChild(gl);
+
+      const grid=document.createElement("div");
+      grid.className="photo-grid";
+      wrap.appendChild(grid);
+
+      items.forEach(f=>grid.appendChild(buildTile(f)));
+    });
+  };
+}
+
+function buildTile(f){
+  const cat=getCat(f);
+  const catInfo=CATS[cat];
+  const tile=document.createElement("div");
+  const isImg=f.type.startsWith("image/");
+  const isVid=f.type.startsWith("video/");
+  const isAud=f.type.startsWith("audio/");
+
+  if((isImg||isVid)&&!isAud){
+    tile.className="tile";
+    const media=document.createElement(isImg?"img":"video");
+    media.src=URL.createObjectURL(f.blob);
+    if(isVid){media.muted=true;media.preload="metadata"}
+    tile.appendChild(media);
+  } else {
+    tile.className="tile doc";
+    const ext=f.name.split(".").pop().toUpperCase().slice(0,5);
+    tile.innerHTML=`<div class="file-icon">${fileIcon(cat)}</div>
+      <div class="fname">${f.name}</div>
+      <div class="fext" style="color:${catInfo.color}">${ext}</div>`;
+  }
+
+  // Checkbox
+  const chk=document.createElement("div");
+  chk.className="tile-check";
+  chk.innerHTML=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+  tile.appendChild(chk);
+
+  // Overlay
+  const ov=document.createElement("div");
+  ov.className="tile-overlay";
+  ov.innerHTML=`<div class="tile-name">${f.name}</div>
+    <div class="tile-meta">${(f.size/1024/1024).toFixed(2)} MB · <span style="color:${catInfo.color}">${catInfo.label}</span></div>
+    <div class="tile-acts"></div>`;
+
+  const acts=ov.querySelector(".tile-acts");
+
+  const dl=document.createElement("button");dl.className="ta dl";
+  dl.innerHTML=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg> Save`;
+  dl.onclick=ev=>{ev.stopPropagation();downloadFile(f)};
+
+  const rn=document.createElement("button");rn.className="ta rn";
+  rn.innerHTML=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M11 4H4a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Rename`;
+  rn.onclick=ev=>{ev.stopPropagation();renameFile(f)};
+
+  const rm=document.createElement("button");rm.className="ta rm";
+  rm.innerHTML=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg> Delete`;
+  rm.onclick=ev=>{ev.stopPropagation();deleteFile(f.id)};
+
+  acts.append(dl,rn,rm);
+  tile.appendChild(ov);
+
+  // Click behaviour
+  tile.addEventListener("click",()=>{
+    if(selectMode){toggleSelect(f.id,tile);return}
+    if(isImg||isVid||isAud) openLB(f); else downloadFile(f);
+  });
+  tile.addEventListener("contextmenu",ev=>{ev.preventDefault();if(!selectMode)toggleSelectMode();toggleSelect(f.id,tile)});
+
+  // long-press for mobile
+  let lpt;
+  tile.addEventListener("pointerdown",()=>{lpt=setTimeout(()=>{if(!selectMode)toggleSelectMode();toggleSelect(f.id,tile)},500)});
+  tile.addEventListener("pointerup",()=>clearTimeout(lpt));
+  tile.addEventListener("pointermove",()=>clearTimeout(lpt));
+
+  tile.dataset.id=f.id;
+  if(selected.has(f.id)) tile.classList.add("selected");
+  return tile;
+}
+
+/* ══════════════════════════════════════════════════
+   CATEGORY BAR
+══════════════════════════════════════════════════ */
+function renderCatBar(counts){
+  const bar=document.getElementById("catBar");
+  bar.innerHTML="";
+  const order=["all","image","video","audio","doc","archive","code","anim","other"];
+  order.forEach(key=>{
+    const cnt=counts[key]||0;
+    if(key!=="all"&&cnt===0) return;
+    const cat=CATS[key]||{label:"All",color:"var(--accent)",icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`};
+    const pill=document.createElement("div");
+    pill.className="cat-pill"+(currentCat===key?" active":"");
+    if(currentCat===key) pill.style.background=key==="all"?"var(--accent)":cat.color;
+    const dot=key!=="all"?`<div class="pill-dot" style="background:${cat.color}"></div>`:"";
+    pill.innerHTML=`${dot}<span style="color:${currentCat===key?"#000":"inherit"}">${key==="all"?"All":cat.label}</span><span class="pill-count" style="color:${currentCat===key?"rgba(0,0,0,.5)":"inherit"}">${cnt}</span>`;
+    pill.onclick=()=>{currentCat=key;renderFiles()};
+    bar.appendChild(pill);
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   MULTI-SELECT
+══════════════════════════════════════════════════ */
+function toggleSelectMode(){
+  selectMode=!selectMode;
+  selected.clear();
+  document.getElementById("gridWrap").classList.toggle("select-mode",selectMode);
+  document.getElementById("selBar").classList.toggle("visible",selectMode);
+  document.getElementById("selCount").textContent="0";
+  if(!selectMode) renderFiles();
+}
+
+function toggleSelect(id,tile){
+  if(selected.has(id)){selected.delete(id);tile.classList.remove("selected")}
+  else{selected.add(id);tile.classList.add("selected")}
+  document.getElementById("selCount").textContent=selected.size;
+}
+
+function selAll(){
+  document.querySelectorAll(".tile").forEach(t=>{
+    const id=t.dataset.id;
+    if(id){selected.add(id);t.classList.add("selected")}
+  });
+  document.getElementById("selCount").textContent=selected.size;
+}
+
+function downloadSelected(){
+  if(!selected.size) return;
+  tx().getAll().onsuccess=e=>{
+    const files=e.target.result.filter(f=>selected.has(f.id));
+    files.forEach((f,i)=>setTimeout(()=>downloadFile(f),i*80));
+    showToast(`Downloading ${files.length} file${files.length>1?"s":""}`);
+    toggleSelectMode();
+  };
+}
+
+function deleteSelected(){
+  if(!selected.size) return;
+  if(!confirm(`Delete ${selected.size} file${selected.size>1?"s":""}?`)) return;
+  const ids=[...selected];
+  const t2=db.transaction("files","readwrite");
+  const s=t2.objectStore("files");
+  ids.forEach(id=>s.delete(id));
+  t2.oncomplete=()=>{showToast(`${ids.length} file${ids.length>1?"s":""} deleted`);toggleSelectMode();renderFiles();updateMeter()};
+}
+
+/* ══════════════════════════════════════════════════
+   FILE ACTIONS
+══════════════════════════════════════════════════ */
+function downloadFile(f){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(f.blob);a.download=f.name;a.click();
+}
+function renameFile(f){
+  const n=prompt("Rename to:",f.name);if(!n||n===f.name) return;
+  f.name=n;tx("readwrite").put(f);renderFiles();showToast("Renamed");
+}
+function deleteFile(id){
+  if(!confirm("Delete this file?")) return;
+  tx("readwrite").delete(id);renderFiles();updateMeter();showToast("Deleted");
+}
+
+/* ══════════════════════════════════════════════════
+   SEARCH
+══════════════════════════════════════════════════ */
+const searchEl=document.getElementById("search");
+searchEl.addEventListener("input",renderFiles);
+document.getElementById("sClear").addEventListener("click",()=>{
+  searchEl.value="";renderFiles();searchEl.focus();
+});
+
+/* ══════════════════════════════════════════════════
+   STORAGE METER
+══════════════════════════════════════════════════ */
+function updateMeter(){
+  tx().getAll().onsuccess=e=>{
+    const total=e.target.result.reduce((a,b)=>a+b.size,0);
+    const MAX=2*1024*1024*1024;
+    const pct=Math.min(100,(total/MAX)*100).toFixed(1);
+    document.getElementById("usage").textContent=(total/1024/1024).toFixed(2)+" MB used";
+    document.getElementById("usagePct").textContent=pct+"%";
+    document.getElementById("sfill").style.width=pct+"%";
+  };
+}
+
+/* ══════════════════════════════════════════════════
+   LIGHTBOX
+══════════════════════════════════════════════════ */
+let _lbFile=null;
+function openLB(f){
+  _lbIdx=_lbFiles.findIndex(x=>x.id===f.id);
+  if(_lbIdx===-1){_lbIdx=0}
+  _showLB(_lbFiles[_lbIdx]||f);
+}
+function _showLB(f){
+  _lbFile=f;
+  const img=document.getElementById("lbImg");
+  const vid=document.getElementById("lbVid");
+  const aud=document.getElementById("lbAud");
+  const url=URL.createObjectURL(f.blob);
+  img.style.display="none";vid.style.display="none";aud.style.display="none";
+  if(f.type.startsWith("image/")){img.src=url;img.style.display="block"}
+  else if(f.type.startsWith("video/")){vid.src=url;vid.style.display="block"}
+  else if(f.type.startsWith("audio/")){aud.src=url;aud.style.display="block"}
+  document.getElementById("lbName").textContent=f.name;
+  document.getElementById("lbDl").onclick=()=>downloadFile(f);
+  document.getElementById("lbRn").onclick=()=>{renameFile(f);closeLB()};
+  document.getElementById("lbRm").onclick=()=>{deleteFile(f.id);closeLB()};
+  // update nav visibility
+  document.getElementById("lbPrev").style.display=_lbFiles.length>1?"flex":"none";
+  document.getElementById("lbNext").style.display=_lbFiles.length>1?"flex":"none";
+  document.getElementById("lightbox").classList.add("open");
+}
+function lbPrev(){
+  if(!_lbFiles.length) return;
+  _lbIdx=(_lbIdx-1+_lbFiles.length)%_lbFiles.length;
+  const v=document.getElementById("lbVid");if(v.pause)v.pause();
+  const a=document.getElementById("lbAud");if(a.pause)a.pause();
+  _showLB(_lbFiles[_lbIdx]);
+}
+function lbNext(){
+  if(!_lbFiles.length) return;
+  _lbIdx=(_lbIdx+1)%_lbFiles.length;
+  const v=document.getElementById("lbVid");if(v.pause)v.pause();
+  const a=document.getElementById("lbAud");if(a.pause)a.pause();
+  _showLB(_lbFiles[_lbIdx]);
+}
+function closeLB(){
+  document.getElementById("lightbox").classList.remove("open");
+  const v=document.getElementById("lbVid");if(v.pause) v.pause();
+  const a=document.getElementById("lbAud");if(a.pause) a.pause();
+}
+function lbBgClick(e){if(e.target===document.getElementById("lightbox")) closeLB()}
+document.addEventListener("keydown",e=>{
+  if(!document.getElementById("lightbox").classList.contains("open")) return;
+  if(e.key==="Escape") closeLB();
+  if(e.key==="ArrowRight") lbNext();
+  if(e.key==="ArrowLeft") lbPrev();
+});
+
+// Swipe support
+(function(){
+  let sx=0,sy=0;
+  const lb=document.getElementById("lightbox");
+  lb.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+  lb.addEventListener("touchend",e=>{
+    const dx=e.changedTouches[0].clientX-sx;
+    const dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>44){
+      if(dx<0) lbNext(); else lbPrev();
+    }
+  },{passive:true});
+})();
+
+/* ══════════════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════════════ */
+function openNav(){
+  document.getElementById("mySidebar").style.width="270px";
+  document.getElementById("sidebarOverlay").classList.add("show");
+}
+function closeNav(){
+  document.getElementById("mySidebar").style.width="0";
+  document.getElementById("sidebarOverlay").classList.remove("show");
+}
+function go(url){window.location.href=url}
+function lock(){sessionStorage.removeItem("vault_unlocked");window.location.href="index.html"}
+
+/* ══════════════════════════════════════════════════
+   THEME SHEET
+══════════════════════════════════════════════════ */
+const IMAGES=["20.jpg","21.png","23.png","26.png","27.png","28.png"];
+const VIDEOS=["w1.mp4","w2.mp4","w3.mp4"];
+let _imgInterval=null, _bgVideo=null;
+
+function openThemeSheet(){
+  closeNav();
+  const cur=localStorage.getItem("themeMode")||"none";
+  document.querySelectorAll(".theme-card").forEach(c=>c.classList.remove("active"));
+  const el=document.getElementById("tc-"+cur);
+  if(el) el.classList.add("active");
+  document.getElementById("sheetOverlay").classList.add("show");
+  document.getElementById("themeSheet").classList.add("open");
+}
+function closeThemeSheet(){
+  document.getElementById("sheetOverlay").classList.remove("show");
+  document.getElementById("themeSheet").classList.remove("open");
+}
+function setTheme(mode){
+  localStorage.setItem("themeMode",mode);
+  closeThemeSheet();
+  applyTheme(mode);
+}
+
+function applyTheme(mode){
+  mode=mode||localStorage.getItem("themeMode")||"none";
+
+  // Clean up existing
+  if(_imgInterval){clearInterval(_imgInterval);_imgInterval=null}
+  if(_bgVideo){_bgVideo.remove();_bgVideo=null}
+  document.body.style.backgroundImage="";
+  document.body.style.background="";
+  document.body.classList.remove("bg-video-active");
+
+  if(mode==="image"){
+    let idx=0;
+    document.body.style.backgroundSize="cover";
+    document.body.style.backgroundPosition="center";
+    document.body.style.transition="background-image 1s ease";
+    function nextImg(){document.body.style.backgroundImage=`url(${IMAGES[idx%IMAGES.length]})`;idx++}
+    nextImg();
+    _imgInterval=setInterval(nextImg,4000);
+  } else if(mode==="video"){
+    document.body.classList.add("bg-video-active");
+    _bgVideo=document.createElement("video");
+    _bgVideo.className="bg-video";
+    _bgVideo.autoplay=true;_bgVideo.muted=true;_bgVideo.playsInline=true;_bgVideo.loop=false;
+    let vi=0;
+    _bgVideo.src=VIDEOS[vi];
+    _bgVideo.play();
+    _bgVideo.addEventListener("ended",()=>{vi=(vi+1)%VIDEOS.length;_bgVideo.src=VIDEOS[vi];_bgVideo.play()});
+    document.body.prepend(_bgVideo);
+  } else if(mode==="gradient"){
+    document.body.style.background="linear-gradient(135deg,#0f2027,#203a43,#2c5364)";
+    document.body.style.backgroundSize="400% 400%";
+    document.body.style.animation="gradMove 12s ease infinite";
+    if(!document.getElementById("grad-kf")){
+      const s=document.createElement("style");s.id="grad-kf";
+      s.textContent="@keyframes gradMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}";
+      document.head.appendChild(s);
+    }
+  } else {
+    document.body.style.background="var(--bg)";
+  }
+}
+
+// Apply on load
+applyTheme();
+
+/* ══════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════ */
+let _toastTimer;
+function showToast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg;t.classList.add("show");
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+/* ══════════════════════════════════════════════════
+   PWA INSTALL
+══════════════════════════════════════════════════ */
+let _prompt=null;
+window.addEventListener("beforeinstallprompt",e=>{
+  e.preventDefault();_prompt=e;
+  document.getElementById("pwa-banner").classList.add("show");
+});
+document.getElementById("pwa-install-btn").addEventListener("click",async()=>{
+  if(!_prompt) return;
+  _prompt.prompt();
+  const{outcome}=await _prompt.userChoice;
+  _prompt=null;
+  document.getElementById("pwa-banner").classList.remove("show");
+});
+document.getElementById("pwa-dismiss").addEventListener("click",()=>{
+  document.getElementById("pwa-banner").classList.remove("show");
+});
+window.addEventListener("appinstalled",()=>{
+  document.getElementById("pwa-banner").classList.remove("show");_prompt=null;
+  showToast("ProSafe installed!");
+});
+</script>
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("./sw.js").catch(e=>console.warn("SW:",e));
+  });
+}
+</script>
+</body>
+</html>

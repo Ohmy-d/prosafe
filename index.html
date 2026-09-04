@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safe Lock</title>
+<link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="rgba(0, 0, 0, 0)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="prosafe">
+<link rel="apple-touch-icon" href="favicon.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+<meta property="og:title" content="prosafe">
+<meta property="og:description" content="encrypted ">
+<meta property="og:image" content="favicon.ico">
+<style>
+body{
+    margin:0;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#1b1b1b;
+    font-family:Arial, Helvetica, sans-serif;
+    color:white;
+}
+
+.safe{
+    width:330px;
+    height:440px;
+    background:linear-gradient(145deg,#666,#2a2a2a);
+    border-radius:20px;
+    box-shadow:inset 0 0 25px black, 0 15px 40px rgba(0,0,0,.7);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+
+.title{
+    margin-bottom:10px;
+    letter-spacing:2px;
+}
+
+.dial{
+    width:200px;
+    height:200px;
+    border-radius:50%;
+    background:radial-gradient(circle,#aaa,#444);
+    border:10px solid #222;
+    position:relative;
+    box-shadow:inset 0 0 15px black;
+    touch-action:none;
+}
+
+.pointer{
+    width:4px;
+    height:110px;
+    background:white;
+    position:absolute;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
+    border-radius:3px;
+}
+
+ .slide-btn {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .slide-btn::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -120%;
+      width: 60%;
+      height: 200%;
+      background: linear-gradient(
+        105deg,
+        transparent 20%,
+        rgba(255,255,255,0.18) 50%,
+        transparent 80%
+      );
+      transform: skewX(-20deg);
+      transition: left 0.7s ease;
+    }
+    .slide-btn:hover::before {
+      left: 130%;
+    }
+.number{
+    margin-top:15px;
+    font-size:30px;
+}
+button {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 14px 36px;
+      border-radius: 100px;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      color: #fff;
+      background: transparent;
+      outline: none;
+      letter-spacing: 0.03em;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+
+.msg{
+    margin-top:10px;
+    font-size:14px;
+    opacity:.9;
+}
+.screen{
+  display:none;
+  flex-direction:column;
+    width:330px;
+    height:440px;
+  position: absolute;
+  align-items:center;
+    justify-content:center;
+}
+.screen.active{display:flex}
+#splash{
+  
+  align-items:center;
+  justify-content:center;
+}
+#logo{
+  width:1290px;
+  height:1920px;
+  background:url("favicon.png") center/contain no-repeat;
+  animation:pulse 1.5s infinite alternate;
+}
+@keyframes pulse{
+  from{transform:scale(1)}
+  to{transform:scale(1.15)}
+}
+#myDIV {
+  width: 250px;
+  height: 150px;
+  margin-bottom: 35px;
+  position: absolute;
+  animation: move 7s infinite;
+  clip: rect(0,300px,300px,0);
+  margin-right: 70px;
+  border-radius: 70px;
+  align-items:center;
+  
+}
+
+@keyframes move {
+  60% {clip: rect(0,50px,50px,0);}
+}
+</style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="rgba(0, 0, 0, 0);">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Vault">
+  <link rel="apple-touch-icon" href="favicon.ico">
+</head>
+
+<body>
+<!-- SPLASH -->
+<div id="splash" class="screen active">  <div id="logo">
+
+</div>
+</div>
+<div id="home" class="screen">
+<div class="safe">
+    <div class="title">SAFE LOCK</div>
+
+    <div class="dial" id="dial">
+        <div class="pointer"></div>
+    </div>
+
+    <div class="number" id="num">0</div>
+
+    <button class="slide-btn" onclick="enter()">ENTER</button>
+    <div class="msg" id="msg"></div>
+</div>
+
+<audio id="tick" src="clicking.wav"></audio>
+<audio id="success" src="unlocked.m4a"></audio>
+<audio id="error" src="error.mp3"></audio>
+
+  </div>
+</div>
+
+<script>
+  let current="splash";
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  history.pushState({page:id},"");
+  current=id;
+}
+
+/* SPLASH */
+setTimeout(()=>go('home'),2500);
+
+  
+let combination = JSON.parse(localStorage.getItem("safe_code"));
+if(!combination){
+    window.location.href = "setup.html";
+}
+
+const dial = document.getElementById("dial");
+const num = document.getElementById("num");
+const msg = document.getElementById("msg");
+
+const tick = document.getElementById("tick");
+const success = document.getElementById("success");
+const error = document.getElementById("error");
+
+let angle = 0;
+let value = 0;
+let attempt = [];
+let dragging = false;
+
+msg.innerText = "Dial the combination";
+
+/* angle calculation */
+function getAngle(x, y){
+    const rect = dial.getBoundingClientRect();
+    const cx = rect.left + rect.width/2;
+    const cy = rect.top + rect.height/2;
+    return Math.atan2(y - cy, x - cx) * 180 / Math.PI;
+}
+
+/* drag start */
+dial.addEventListener("pointerdown", e=>{
+    dragging = true;
+});
+
+/* drag move */
+window.addEventListener("pointermove", e=>{
+    if(!dragging) return;
+
+    angle = getAngle(e.clientX, e.clientY);
+    dial.style.transform = `rotate(${angle}deg)`;
+
+    let newVal = Math.floor((angle + 180) / 3.6) % 100;
+    if(newVal < 0) newVal += 100;
+
+    if(newVal !== value){
+        value = newVal;
+        num.innerText = value;
+
+        tick.currentTime = 0;
+        tick.play();
+
+        if(navigator.vibrate) navigator.vibrate(5);
+    }
+});
+
+/* drag end */
+window.addEventListener("pointerup", ()=> dragging = false);
+
+/* enter number */
+function enter(){
+    attempt.push(value);
+
+    if(attempt.length === 3){
+        if(JSON.stringify(attempt) === JSON.stringify(combination)){
+            msg.innerText = "Unlocked!";
+            success.play();
+            if(navigator.vibrate) navigator.vibrate([100,50,100]);
+
+            setTimeout(()=>{
+                sessionStorage.setItem("vault_unlocked", Date.now());
+                window.location.href = "loading.html";
+            },1200);
+        }else{
+            msg.innerText = "Wrong!";
+            error.play();
+            if(navigator.vibrate) navigator.vibrate(300);
+        }
+        attempt = [];
+    }else{
+        msg.innerText = "Step " + attempt.length + " / 3";
+    }
+}
+</script>
+
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("./sw.js")
+      .then(r=>console.log("SW registered",r.scope))
+      .catch(e=>console.warn("SW failed",e));
+  });
+}
+</script>
+<!-- PWA Install Banner -->
+<div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
+  padding:14px 18px;background-color:rgba(0, 0, 0, 0);backdrop-filter:blur(20px);
+  border-top:1px solid rgba(0,229,160,.3);
+  display:none;align-items:center;gap:12px;font-family:'DM Sans',sans-serif;">
+  <img src="favicon.png" style="width:40px;height:40px;border-radius:none;background:rgba(0, 0, 0, 0);flex-shrink:0">
+  <div style="flex:1">
+    <div style="font-size:14px;font-weight:600;color:#f0f0f0">Install ProSafe</div>
+    <div style="font-size:12px;color:rgba(0, 0, 0, 0)">Add to home screen for offline use</div>
+  </div>
+  <button id="pwa-install-btn" style="padding:9px 18px;border-radius:50px;border:none;
+    background:$ffff;color:rgba(0, 0, 0, 0);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap">
+    Install
+  </button>
+  <button id="pwa-dismiss" style="backgroun:rgba(0, 0, 0, 0);border:none;color:rgba(0, 0, 0, 0);font-size:20px;
+    cursor:pointer;padding:4px 8px;line-height:1">×</button>
+</div>
+<script>
+let _deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  _deferredPrompt = e;
+  const b = document.getElementById('pwa-banner');
+  if(b) b.style.display='flex';
+});
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btn = document.getElementById('pwa-install-btn');
+  const dis = document.getElementById('pwa-dismiss');
+  const ban = document.getElementById('pwa-banner');
+  if(btn) btn.addEventListener('click', async()=>{
+    if(!_deferredPrompt) return;
+    _deferredPrompt.prompt();
+    const {outcome} = await _deferredPrompt.userChoice;
+    _deferredPrompt = null;
+    if(ban) ban.style.display='none';
+  });
+  if(dis) dis.addEventListener('click', ()=>{ if(ban) ban.style.display='none'; });
+});
+window.addEventListener('appinstalled', ()=>{
+  const b = document.getElementById('pwa-banner');
+  if(b) b.style.display='none';
+  _deferredPrompt=null;
+});
+</script>
+</body>
+</html>

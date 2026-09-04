@@ -1,0 +1,39 @@
+body {
+  font-family: sans-serif;
+  background: #000;
+  color: white;
+  text-align: center;
+}
+
+#wrap {
+  position: relative;
+  width: 260px;
+  margin: 20px auto;
+  margin-top: 50%;
+}
+
+#grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 80px;
+}
+
+#lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.dot {
+  width: 15px;
+  height: 15px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.dot.active {
+  background: #fff;
+  border-color: #fff;
+}
