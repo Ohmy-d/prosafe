@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locker</title>
+
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+  height:100vh;
+  background:linear-gradient(180deg,#0f172a,#1e293b);
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.phone{
+  width:360px;
+  max-width:95%;
+  height:640px;
+  border-radius:35px;
+  background:linear-gradient(180deg,#0b1220,#111827);
+  box-shadow:0 20px 40px rgba(0,0,0,.6);
+  position:relative;
+  overflow:hidden;
+  text-align:center;
+}
+
+/* TIME */
+.time{
+  font-size:48px;
+  margin-top:70px;
+  font-weight:600;
+}
+.date{
+  opacity:.8;
+  margin-top:5px;
+}
+
+/* FINGERPRINT */
+.fingerprint{
+  position:absolute;
+  bottom:110px;
+  left:50%;
+  transform:translateX(-50%);
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  border:2px solid rgba(34,197,94,.5);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(34,197,94,.4);}
+  70%{box-shadow:0 0 0 20px rgba(34,197,94,0);}
+  100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}
+}
+
+.fingerprint::after{
+  content:"🔒";
+  font-size:32px;
+}
+
+/* SWIPE TEXT */
+.swipe{
+  position:absolute;
+  bottom:55px;
+  width:100%;
+  font-size:14px;
+  opacity:.7;
+}
+
+/* STATUS */
+.status{
+  position:absolute;
+  bottom:15px;
+  width:100%;
+  font-size:12px;
+  opacity:.6;
+}
+</style>
+</head>
+
+<body>
+<div class="phone">
+  <div class="time" id="time"></div>
+  <div class="date" id="date"></div>
+
+  <div class="fingerprint" id="fingerprint"></div>
+  <div class="swipe">Swipe up or tap fingerprint to unlock</div>
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const MAX_OPENS = 50;
+const redirectPage = "Setup.html";
+
+const finger = document.getElementById("fingerprint");
+const statusText = document.getElementById("status");
+
+/* CLOCK */
+function updateClock(){
+  const now = new Date();
+  document.getElementById("time").innerText =
+    now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  document.getElementById("date").innerText =
+    now.toDateString();
+}
+setInterval(updateClock,1000);
+updateClock();
+
+/* HELPERS */
+function bufferDecode(value){
+  return Uint8Array.from(atob(value), c => c.charCodeAt(0));
+}
+function bufferEncode(value){
+  return btoa(String.fromCharCode.apply(null, new Uint8Array(value)));
+}
+
+let storedCredential = localStorage.getItem("credentialId");
+let opens = parseInt(localStorage.getItem("opens") || "0");
+
+function updateStatus(){
+  if(!storedCredential || opens >= MAX_OPENS){
+    statusText.innerText = opens >= MAX_OPENS
+      ? "Registration required again"
+      : "Tap fingerprint for first setup";
+  } else {
+    statusText.innerText = `Opens: ${opens}/${MAX_OPENS}`;
+  }
+}
+updateStatus();
+
+/* TAP FINGERPRINT */
+finger.addEventListener("click", async ()=>{
+  if(!window.PublicKeyCredential){
+    alert("Biometric authentication not supported.");
+    return;
+  }
+
+  /* SETUP */
+  if(!storedCredential || opens >= MAX_OPENS){
+    const publicKey = {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: "Locker" },
+      user: {
+        id: crypto.getRandomValues(new Uint8Array(16)),
+        name: "user",
+        displayName: "User"
+      },
+      pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+      authenticatorSelection: {
+        authenticatorAttachment: "platform",
+        userVerification: "required"
+      },
+      timeout: 60000,
+      attestation: "none"
+    };
+
+    try{
+      const cred = await navigator.credentials.create({ publicKey });
+      localStorage.setItem("credentialId", bufferEncode(cred.rawId));
+      localStorage.setItem("opens", "0");
+      storedCredential = localStorage.getItem("credentialId");
+      opens = 0;
+      updateStatus();
+      alert("Registration successful");
+    }catch(e){
+      alert("Registration failed");
+    }
+
+  } else {
+    /* UNLOCK */
+    const publicKey = {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials: [{
+        id: bufferDecode(storedCredential),
+        type: "public-key"
+      }],
+      userVerification: "required",
+      timeout: 60000
+    };
+
+    try{
+      await navigator.credentials.get({ publicKey });
+      opens++;
+      localStorage.setItem("opens", opens);
+      window.location.href = redirectPage;
+    }catch(e){
+      alert("Authentication failed");
+    }
+  }
+});
+</script>
+
+</body>
+</html>
