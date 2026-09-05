@@ -257,58 +257,13 @@ input[type=file]{display:none}
 #pvImg{max-width:94vw;max-height:100%;object-fit:contain;transition:transform .3s ease;touch-action:pan-y pinch-zoom;cursor:zoom-in}
 #pvImg.zoomed{transform:scale(2.1);cursor:zoom-out}
 #pvVid{max-width:94vw;max-height:100%;border-radius:4px;background:#000}
-.pv-audio-stage{display:flex;flex-direction:column;align-items:center;gap:22px;padding:20px;width:100%}
-.pv-audio-art{
-  position:relative;width:220px;height:220px;border-radius:36px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;overflow:hidden;
-  box-shadow:0 24px 60px -12px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.06) inset;
-  transition:transform .6s cubic-bezier(.22,1,.36,1);
-}
-.pv-audio-art.playing{animation:artBreathe 3.2s ease-in-out infinite}
-@keyframes artBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
-.pv-audio-art-icon{opacity:.9;filter:drop-shadow(0 4px 18px rgba(0,0,0,.35))}
-.pv-audio-bars{
-  position:absolute;left:0;right:0;bottom:0;
-  display:flex;align-items:flex-end;justify-content:center;gap:5px;height:52px;
-  padding-bottom:16px;
-  background:linear-gradient(to top,rgba(0,0,0,.32),transparent);
-}
-.pv-audio-bars .bar{width:6px;border-radius:4px 4px 0 0;transform-origin:bottom;animation-play-state:paused}
-.pv-audio-bars.playing .bar{animation-play-state:running}
-.pv-audio-meta{text-align:center;max-width:86vw}
+.pv-audio-stage{display:flex;flex-direction:column;align-items:center;gap:24px;padding:20px;width:100%}
+.pv-audio-art{width:170px;height:170px;border-radius:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pv-audio-bars{display:flex;align-items:flex-end;gap:5px;height:56px}
+.pv-audio-bars .bar{width:7px;border-radius:4px 4px 0 0;transform-origin:bottom}
 .pv-audio-name{font-family:'Instrument Serif',serif;font-style:italic;font-size:19px;
-  color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pv-audio-duration{font-size:11.5px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:600;letter-spacing:.02em}
-.pv-audio-progress-row{display:flex;align-items:center;gap:10px;width:min(340px,86vw)}
-.pv-time{font-size:10.5px;color:rgba(255,255,255,.5);font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;width:32px}
-.pv-time.pv-time-end{text-align:right}
-.pv-seek-track{position:relative;flex:1;height:14px;display:flex;align-items:center;cursor:pointer;touch-action:none}
-.pv-seek-track::before{content:'';position:absolute;left:0;right:0;height:4px;border-radius:50px;background:rgba(255,255,255,.15)}
-.pv-seek-fill{position:absolute;left:0;height:4px;border-radius:50px;background:var(--cyan);width:0%;pointer-events:none}
-.pv-seek-thumb{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:#fff;
-  box-shadow:0 1px 5px rgba(0,0,0,.5);transform:translate(-50%,-50%) scale(1);left:0%;
-  transition:transform .15s;pointer-events:none}
-.pv-seek-track:active .pv-seek-thumb{transform:translate(-50%,-50%) scale(1.35)}
-.pv-audio-transport{display:flex;align-items:center;justify-content:center;gap:18px;width:100%}
-.pv-transport-btn{
-  width:40px;height:40px;border-radius:50%;flex-shrink:0;border:none;background:none;
-  color:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;cursor:pointer;
-  transition:color .15s,transform .1s;position:relative;
-}
-.pv-transport-btn:active{transform:scale(.88)}
-.pv-transport-btn.active{color:var(--cyan)}
-.pv-transport-btn .pv-repeat-one{display:none}
-.pv-transport-btn.repeat-one .pv-repeat-one{display:block}
-.pv-play-btn{
-  width:64px;height:64px;border-radius:50%;flex-shrink:0;border:none;cursor:pointer;
-  background:var(--cyan);color:#062226;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 10px 28px -6px rgba(71,229,255,.55);transition:transform .12s;
-}
-.pv-play-btn:active{transform:scale(.92)}
-.pv-play-btn .pv-icon-pause{display:none}
-.pv-play-btn.is-playing .pv-icon-play{display:none}
-.pv-play-btn.is-playing .pv-icon-pause{display:block}
-.pv-transport-spacer{width:40px;flex-shrink:0}
+  text-align:center;color:#fff;max-width:82vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-audio-stage audio{width:min(320px,84vw)}
 .preview-nav{
   position:absolute;top:50%;transform:translateY(-50%);
   width:40px;height:40px;border-radius:50%;
@@ -524,43 +479,11 @@ input[type=file]{display:none}
       <video id="pvVid" src="" controls playsinline style="display:none"></video>
       <div id="pvAudioStage" class="pv-audio-stage" style="display:none">
         <div class="pv-audio-art" id="pvAudioArt">
-          <svg class="pv-audio-art-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-          <div class="pv-audio-bars" id="pvAudioBars"></div>
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
         </div>
-
-        <div class="pv-audio-meta">
-          <div class="pv-audio-name" id="pvAudioName"></div>
-          <div class="pv-audio-duration" id="pvAudioDuration"></div>
-        </div>
-
-        <div class="pv-audio-progress-row">
-          <span class="pv-time" id="pvCurTime">0:00</span>
-          <div class="pv-seek-track" id="pvSeekTrack">
-            <div class="pv-seek-fill" id="pvSeekFill"></div>
-            <div class="pv-seek-thumb" id="pvSeekThumb"></div>
-          </div>
-          <span class="pv-time pv-time-end" id="pvDurTime">0:00</span>
-        </div>
-
-        <div class="pv-audio-transport">
-          <button class="pv-transport-btn" id="pvRepeatBtn" title="Repeat" aria-label="Repeat">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-            <svg class="pv-repeat-one" width="14" height="14" viewBox="0 0 24 24" style="position:absolute;bottom:1px;right:1px" fill="currentColor"><circle cx="12" cy="12" r="9" fill="#080808"/><text x="12" y="16" font-size="11" font-weight="800" text-anchor="middle" fill="currentColor">1</text></svg>
-          </button>
-          <button class="pv-transport-btn" id="pvAudioPrev" title="Previous track" aria-label="Previous track">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="2" height="16"/></svg>
-          </button>
-          <button class="pv-play-btn" id="pvPlayBtn" title="Play" aria-label="Play">
-            <svg class="pv-icon-play" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="margin-left:2px"><polygon points="6 3 20 12 6 21 6 3"/></svg>
-            <svg class="pv-icon-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="5" height="18" rx="1"/><rect x="14" y="3" width="5" height="18" rx="1"/></svg>
-          </button>
-          <button class="pv-transport-btn" id="pvAudioNext" title="Next track" aria-label="Next track">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="17" y="4" width="2" height="16"/></svg>
-          </button>
-          <div class="pv-transport-spacer"></div>
-        </div>
-
-        <audio id="pvAud" src="" preload="metadata"></audio>
+        <div class="pv-audio-bars" id="pvAudioBars"></div>
+        <div class="pv-audio-name" id="pvAudioName"></div>
+        <audio id="pvAud" src="" controls></audio>
       </div>
     </div>
     <button class="preview-nav next" id="pvNext" onclick="lbNext()" aria-label="Next">
@@ -1157,7 +1080,6 @@ function _showPreview(f){
     aud.src=url;
     const info=CATS.audio;
     document.getElementById("pvAudioName").textContent=f.name;
-    document.getElementById("pvAudioDuration").textContent="";
     const art=document.getElementById("pvAudioArt");
     art.style.background=info.glow;art.style.color=info.hex;
     let bars="";
@@ -1166,18 +1088,12 @@ function _showPreview(f){
       bars+=`<div class="bar" style="height:${h}%;background:${info.hex};animation-delay:${(i*0.08).toFixed(2)}s"></div>`;
     }
     document.getElementById("pvAudioBars").innerHTML=bars;
-    document.getElementById("pvSeekFill").style.width="0%";
-    document.getElementById("pvSeekThumb").style.left="0%";
-    document.getElementById("pvCurTime").textContent="0:00";
-    document.getElementById("pvDurTime").textContent="0:00";
-    setPlayingUI(false);
     audioStage.style.display="flex";
-    aud.play().catch(()=>{});
   }
 
   document.getElementById("pvName").textContent=f.name;
   document.getElementById("pvSub").textContent=buildPvSub(f);
-  const showNav=_lbFiles.length>1 && cat!=="audio";
+  const showNav=_lbFiles.length>1;
   document.getElementById("pvPrev").style.display=showNav?"flex":"none";
   document.getElementById("pvNext").style.display=showNav?"flex":"none";
   updateInfoPanel();
@@ -1195,113 +1111,6 @@ function lbNext(){
   _showPreview(_lbFiles[_lbIdx]);
 }
 
-/* ── AUDIO PLAYER: transport, scrubber, repeat system ── */
-let repeatMode=0; // 0 off, 1 repeat-all, 2 repeat-one
-
-function formatTime(sec){
-  if(!isFinite(sec)||sec<0) sec=0;
-  const m=Math.floor(sec/60), s=Math.floor(sec%60).toString().padStart(2,"0");
-  return m+":"+s;
-}
-
-function getAudioQueue(){
-  return _lbFiles.filter(f=>getCat(f)==="audio");
-}
-function jumpToFile(f){
-  if(!f) return;
-  const idx=_lbFiles.findIndex(x=>x.id===f.id);
-  if(idx<0) return;
-  _lbIdx=idx;
-  _showPreview(_lbFiles[_lbIdx]);
-}
-function audioPrev(){
-  const q=getAudioQueue();
-  if(q.length<=1||!_pvFile) return;
-  const curIdx=q.findIndex(f=>f.id===_pvFile.id);
-  jumpToFile(q[(curIdx-1+q.length)%q.length]);
-}
-function audioNext(){
-  const q=getAudioQueue();
-  if(q.length<=1||!_pvFile) return;
-  const curIdx=q.findIndex(f=>f.id===_pvFile.id);
-  jumpToFile(q[(curIdx+1)%q.length]);
-}
-
-function setPlayingUI(isPlaying){
-  document.getElementById("pvPlayBtn").classList.toggle("is-playing",isPlaying);
-  document.getElementById("pvAudioArt").classList.toggle("playing",isPlaying);
-  document.getElementById("pvAudioBars").classList.toggle("playing",isPlaying);
-}
-
-function cycleRepeat(){
-  repeatMode=(repeatMode+1)%3;
-  const btn=document.getElementById("pvRepeatBtn");
-  btn.classList.toggle("active",repeatMode>0);
-  btn.classList.toggle("repeat-one",repeatMode===2);
-  btn.title = repeatMode===0?"Repeat off": repeatMode===1?"Repeat all":"Repeat one";
-}
-
-(function wireAudioPlayer(){
-  const aud=document.getElementById("pvAud");
-  const playBtn=document.getElementById("pvPlayBtn");
-  const seekTrack=document.getElementById("pvSeekTrack");
-  const seekFill=document.getElementById("pvSeekFill");
-  const seekThumb=document.getElementById("pvSeekThumb");
-
-  playBtn.onclick=()=>{ if(aud.paused) aud.play().catch(()=>{}); else aud.pause(); };
-  document.getElementById("pvRepeatBtn").onclick=cycleRepeat;
-  document.getElementById("pvAudioPrev").onclick=audioPrev;
-  document.getElementById("pvAudioNext").onclick=audioNext;
-
-  aud.addEventListener("play",()=>setPlayingUI(true));
-  aud.addEventListener("pause",()=>setPlayingUI(false));
-
-  aud.addEventListener("loadedmetadata",()=>{
-    document.getElementById("pvDurTime").textContent=formatTime(aud.duration);
-    document.getElementById("pvAudioDuration").textContent=formatTime(aud.duration)+" · Audio";
-  });
-
-  aud.addEventListener("timeupdate",()=>{
-    if(!isFinite(aud.duration)||aud.duration<=0) return;
-    const pct=(aud.currentTime/aud.duration)*100;
-    seekFill.style.width=pct+"%";
-    seekThumb.style.left=pct+"%";
-    document.getElementById("pvCurTime").textContent=formatTime(aud.currentTime);
-  });
-
-  aud.addEventListener("ended",()=>{
-    if(repeatMode===2){ // repeat one
-      aud.currentTime=0;
-      aud.play().catch(()=>{});
-      return;
-    }
-    const q=getAudioQueue();
-    if(!_pvFile||q.length===0) return;
-    const curIdx=q.findIndex(f=>f.id===_pvFile.id);
-    const isLast=curIdx===q.length-1;
-    if(repeatMode===1){ // repeat all - always continue, wrapping around
-      jumpToFile(q[(curIdx+1)%q.length]);
-    } else if(!isLast){ // off - continue only if more tracks remain
-      jumpToFile(q[curIdx+1]);
-    }
-  });
-
-  function seekFromClientX(clientX){
-    if(!isFinite(aud.duration)||aud.duration<=0) return;
-    const rect=seekTrack.getBoundingClientRect();
-    let pct=(clientX-rect.left)/rect.width;
-    pct=Math.max(0,Math.min(1,pct));
-    aud.currentTime=pct*aud.duration;
-    seekFill.style.width=(pct*100)+"%";
-    seekThumb.style.left=(pct*100)+"%";
-  }
-  let seeking=false;
-  seekTrack.addEventListener("pointerdown",(e)=>{seeking=true;seekFromClientX(e.clientX);seekTrack.setPointerCapture(e.pointerId)});
-  seekTrack.addEventListener("pointermove",(e)=>{if(seeking) seekFromClientX(e.clientX)});
-  seekTrack.addEventListener("pointerup",()=>seeking=false);
-  seekTrack.addEventListener("pointercancel",()=>seeking=false);
-})();
-
 function closePreview(){
   document.getElementById("previewPage").classList.remove("open");
   document.body.style.overflow="";
@@ -1312,7 +1121,6 @@ function closePreview(){
   if(_pvCurrentUrl){URL.revokeObjectURL(_pvCurrentUrl);_pvCurrentUrl=null}
   document.getElementById("pvImg").src="";
   document.getElementById("pvInfoPanel").classList.remove("open");
-  setPlayingUI(false);
   _pvFile=null;
 }
 
@@ -1396,17 +1204,15 @@ _pvStage.addEventListener("touchend",(e)=>{
   const dx=e.changedTouches[0].clientX-_touchStartX;
   const dy=e.changedTouches[0].clientY-_touchStartY;
   if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)*1.5){
-    const isAudio=_pvFile&&getCat(_pvFile)==="audio";
-    if(dx>0){ isAudio?audioPrev():lbPrev(); } else { isAudio?audioNext():lbNext(); }
+    if(dx>0) lbPrev(); else lbNext();
   }
 },{passive:true});
 
 document.addEventListener("keydown",(e)=>{
   if(!document.getElementById("previewPage").classList.contains("open")) return;
-  const isAudio=_pvFile&&getCat(_pvFile)==="audio";
   if(e.key==="Escape") closePreview();
-  else if(e.key==="ArrowLeft"){ isAudio?audioPrev():lbPrev(); }
-  else if(e.key==="ArrowRight"){ isAudio?audioNext():lbNext(); }
+  else if(e.key==="ArrowLeft") lbPrev();
+  else if(e.key==="ArrowRight") lbNext();
 });
 
 /* ══════════════════════════════════════════════════
