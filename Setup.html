@@ -16,6 +16,8 @@ body{
 }
 .box{
     text-align:center;
+    padding:0 24px;
+    max-width:320px;
 }
 input{
     width:60px;
@@ -26,12 +28,30 @@ input{
 button{
     margin-top:10px;
     padding:10px 20px;
+    font-size:15px;
+    border-radius:8px;
+    border:none;
+    background:#2a2a2a;
+    color:white;
+    cursor:pointer;
 }
+button:disabled{opacity:.5;cursor:default}
+.icon{font-size:42px;margin-bottom:6px}
+.err{color:#ff6b6b;font-size:13px;margin-top:14px}
+.hidden{display:none}
 </style>
 </head>
 <body>
 
-<div class="box">
+<div class="box" id="gate">
+    <div class="icon"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    <h2 id="gateTitle">Verify It's You</h2>
+    <p id="gateMsg">Confirm your identity before changing the safe code.</p>
+    <button onclick="startGate()" id="gateBtn">Verify</button>
+    <p class="err hidden" id="gateErr"></p>
+</div>
+
+<div class="box hidden" id="formBox">
     <h2>Create 3 Numbers</h2>
     <input type="number" id="n1" min="0" max="99">
     <input type="number" id="n2" min="0" max="99">
@@ -41,6 +61,132 @@ button{
 </div>
 
 <script>
+/* ── biometric gate (WebAuthn platform authenticator:
+     Face ID on iOS, fingerprint/face unlock on Android) ── */
+
+function getCredId(){ return localStorage.getItem("safe_biometric_cred_id"); }
+
+function platformLabel(){
+    const ua = navigator.userAgent || "";
+    if(/iPhone|iPad|iPod/.test(ua)) return "Face ID";
+    if(/Android/.test(ua)) return "fingerprint";
+    return "biometric unlock";
+}
+
+function bufToB64(buf){
+    let bin = "";
+    const bytes = new Uint8Array(buf);
+    for(let i=0;i<bytes.byteLength;i++) bin += String.fromCharCode(bytes[i]);
+    return window.btoa(bin);
+}
+function b64ToBuf(b64){
+    const bin = window.atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+}
+
+async function supportsPlatformAuth(){
+    if(!window.PublicKeyCredential || typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable !== "function"){
+        return false;
+    }
+    try{ return await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); }
+    catch(e){ return false; }
+}
+
+/* First-time enrollment: registers this device's fingerprint/Face ID
+   as the credential that will guard future resets. */
+async function registerBiometric(){
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const userId = crypto.getRandomValues(new Uint8Array(16));
+    const cred = await navigator.credentials.create({
+        publicKey:{
+            challenge,
+            rp:{ name:"ProSafe Vault" },
+            user:{ id:userId, name:"vault-owner", displayName:"Vault Owner" },
+            pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],
+            authenticatorSelection:{ authenticatorAttachment:"platform", userVerification:"required" },
+            timeout:60000,
+            attestation:"none"
+        }
+    });
+    if(!cred) throw new Error("No credential returned");
+    localStorage.setItem("safe_biometric_cred_id", bufToB64(cred.rawId));
+}
+
+/* Returning visits: re-checks the same fingerprint/Face ID before
+   letting the code be reset. */
+async function verifyBiometric(credIdB64){
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const assertion = await navigator.credentials.get({
+        publicKey:{
+            challenge,
+            allowCredentials:[{ id:b64ToBuf(credIdB64), type:"public-key", transports:["internal"] }],
+            userVerification:"required",
+            timeout:60000
+        }
+    });
+    if(!assertion) throw new Error("No assertion returned");
+}
+
+function showForm(){
+    document.getElementById("gate").classList.add("hidden");
+    document.getElementById("formBox").classList.remove("hidden");
+}
+function setGateError(msg){
+    const e = document.getElementById("gateErr");
+    e.textContent = msg;
+    e.classList.remove("hidden");
+}
+function setGateBusy(busy){
+    const btn = document.getElementById("gateBtn");
+    btn.disabled = busy;
+    btn.textContent = busy ? "Waiting…" : window._gateBtnLabel;
+}
+
+async function startGate(){
+    document.getElementById("gateErr").classList.add("hidden");
+    setGateBusy(true);
+    try{
+        const credId = getCredId();
+        if(credId){
+            await verifyBiometric(credId);
+        } else {
+            await registerBiometric();
+        }
+        showForm();
+    }catch(err){
+        console.error(err);
+        setGateError("Verification failed or was cancelled. Tap Verify to try again.");
+    }finally{
+        setGateBusy(false);
+    }
+}
+
+(async function initGate(){
+    const label = platformLabel();
+    const hasCred = !!getCredId();
+    const supported = await supportsPlatformAuth();
+    const btn = document.getElementById("gateBtn");
+    const title = document.getElementById("gateTitle");
+    const msg = document.getElementById("gateMsg");
+
+    if(!supported){
+        title.textContent = "Biometric Unlock Unavailable";
+        msg.textContent = "This device or browser doesn't support " + label + ", so setup can't continue here for safety reasons.";
+        btn.classList.add("hidden");
+        return;
+    }
+
+    window._gateBtnLabel = hasCred ? ("Verify with " + label) : ("Set Up " + label);
+    btn.textContent = window._gateBtnLabel;
+    title.textContent = hasCred ? "Verify It's You" : "Protect Your Safe Code";
+    msg.textContent = hasCred
+        ? "Confirm your identity before changing the safe code."
+        : "Set up " + label + " now so only you can reset this code later.";
+})();
+
+/* ── original save flow, unchanged ── */
 function save(){
     const code = [
         Number(n1.value),
