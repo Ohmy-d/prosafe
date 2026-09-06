@@ -36,15 +36,21 @@ body{
   font-family:'Cabinet Grotesk','DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 body.bg-video-active{background:transparent}
-.app-shell{max-width:720px;margin:0 auto;padding:14px 14px 100px}
+.app-shell{max-width:720px;margin:0 auto;padding:12px 14px 100px}
+.sticky-top{
+  position:sticky;top:0;z-index:50;max-width:720px;margin:0 auto;
+  padding:14px 14px 0;background:rgba(8,8,8,.85);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
 }
 :focus-visible{outline:2px solid var(--lime);outline-offset:2px}
 
 /* ── BACKGROUND VIDEO (theme) ───────────────────── */
-.bg-video{position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:cover;z-index:-1;background:#000;opacity:5;transition:opacity .4s ease}
-.bg-video.bg-video-visible{opacity:1.0}
+.bg-video{position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:cover;z-index:-1;background:#000;opacity:0;transition:opacity .9s ease}
+.bg-video.bg-video-visible{opacity:.5}
 @keyframes gradFlow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 
 /* ── HEADER ──────────────────────────────────────── */
@@ -411,8 +417,7 @@ input[type=file]{display:none}
 
 <!-- BACKGROUND VIDEO placeholder (injected by theme) -->
 
-<div class="app-shell">
-
+<div class="sticky-top">
   <!-- HEADER -->
   <div class="header">
     <button class="icon-btn" onclick="openNav()" title="Menu" aria-label="Menu">
@@ -444,6 +449,9 @@ input[type=file]{display:none}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
+</div>
+
+<div class="app-shell">
 
   <!-- STORAGE -->
   <div class="storage-row">
