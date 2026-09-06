@@ -39,8 +39,8 @@ body.bg-video-active{background:transparent}
 .app-shell{max-width:720px;margin:0 auto;padding:12px 14px 100px}
 .sticky-top{
   position:sticky;top:0;z-index:50;max-width:720px;margin:0 auto;
-  padding:14px 14px 0;background:rgba(8,8,8,.85);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  padding:14px 14px 0;background:rgba(0,0,0,.3);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(20px);
   border-bottom:1px solid var(--border);
 }
 @media(prefers-reduced-motion:reduce){
@@ -50,7 +50,7 @@ body.bg-video-active{background:transparent}
 
 /* ── BACKGROUND VIDEO (theme) ───────────────────── */
 .bg-video{position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:cover;z-index:-1;background:#000;opacity:0;transition:opacity .9s ease}
-.bg-video.bg-video-visible{opacity:.5}
+.bg-video.bg-video-visible{opacity:1.0}
 @keyframes gradFlow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 
 /* ── HEADER ──────────────────────────────────────── */
