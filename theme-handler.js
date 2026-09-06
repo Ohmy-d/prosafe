@@ -6,8 +6,8 @@
  * (legacy vault pages) and re-exports applyTheme for external use.
  */
 
-const IMAGES_TH = ["20.jpg","21.png","23.png","26.png","27.png","28.png"];
-const VIDEOS_TH  = ["w1.mp4","w2.mp4","w3.mp4"];
+const IMAGES_TH = [ "5.png","2.png","9.jpg","1.png","3.png","6.png","7.png","8.png","9.png","10.png","11.png","12.png","13.png","14.png"];
+const VIDEOS_TH  = ["w1.mp4","w2.mp4","w3.mp4","w4.mp4","w5.mp4","w6.mp4","w7.mp4","w8.mp4","w9.mp4","w10.mp4","w11.mp4","w12.mp4","w13.mp4","w14.mp4","w15.mp4","w16.mp4","w17.mp4","w18.mp4"];
 
 let _thImgInterval = null;
 let _thBgVideo     = null;
