@@ -43,7 +43,8 @@ body.bg-video-active{background:transparent}
 :focus-visible{outline:2px solid var(--lime);outline-offset:2px}
 
 /* ── BACKGROUND VIDEO (theme) ───────────────────── */
-.bg-video{position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:cover;z-index:-1;opacity:.5}
+.bg-video{position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:cover;z-index:-1;background:#000;opacity:0;transition:opacity .9s ease}
+.bg-video.bg-video-visible{opacity:.5}
 @keyframes gradFlow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 
 /* ── HEADER ──────────────────────────────────────── */
@@ -1564,12 +1565,74 @@ function lock(){
 /* ══════════════════════════════════════════════════
    THEME & BACKGROUND
 ══════════════════════════════════════════════════ */
-const IMAGES=["20.jpg","21.png","22.jpg","23.jpg","24.jpg"];
-const VIDEOS=["w1.mp4","w2.mp4","w3.mp4"];
+const IMAGES=["1.png","2.png","3.png","6.png","7.png","8.png","9.png","10.png","11.png","12.png","13.png","14.png"];
+const VIDEOS=["w1.mp4","w2.mp4","w3.mp4","w4.mp4","w5.mp4","w6.mp4","w7.mp4","w8.mp4","w9.mp4","w10.mp4","w11.mp4","w12.mp4","w13.mp4","w14.mp4","w15.mp4","w16.mp4","w17.mp4","w18.mp4"];
 let _themeImgInterval=null, _themeImgIdx=0;
 let _bgVideoEl=null, _themeVidIdx=0;
+let _themeImgToken=null, _themeVidToken=null;
+
+/* ── Offline theme-asset cache ──────────────────────
+   Resolves a theme image/video URL to a playable object URL. Network is
+   always preferred (so updated files on the server are picked up), but
+   every successful fetch is also saved to IndexedDB so the same asset can
+   still be shown from cache if the device is offline later. Resolved URLs
+   are kept in memory for the rest of this page session so the rotation
+   doesn't re-fetch the same file every time it loops back around. */
+const _themeMemCache={};
+let _themeCacheDB=null;
+function openThemeCacheDB(){
+  return new Promise(resolve=>{
+    if(_themeCacheDB) return resolve(_themeCacheDB);
+    const req=indexedDB.open("ThemeCacheDB",1);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains("assets")) d.createObjectStore("assets",{keyPath:"url"});
+    };
+    req.onsuccess=e=>{_themeCacheDB=e.target.result;resolve(_themeCacheDB)};
+    req.onerror=()=>resolve(null);
+  });
+}
+async function cacheThemeAsset(url,blob){
+  try{
+    const db=await openThemeCacheDB();
+    if(!db) return;
+    db.transaction("assets","readwrite").objectStore("assets").put({url,blob,savedAt:Date.now()});
+  }catch(e){/* offline caching is best-effort; never block playback on it */}
+}
+function getCachedThemeAsset(url){
+  return new Promise(resolve=>{
+    openThemeCacheDB().then(db=>{
+      if(!db) return resolve(null);
+      try{
+        const req=db.transaction("assets","readonly").objectStore("assets").get(url);
+        req.onsuccess=()=>resolve(req.result?req.result.blob:null);
+        req.onerror=()=>resolve(null);
+      }catch(e){resolve(null)}
+    });
+  });
+}
+async function resolveThemeAssetURL(url){
+  if(_themeMemCache[url]) return _themeMemCache[url];
+  try{
+    const resp=await fetch(url);
+    if(!resp.ok) throw new Error("HTTP "+resp.status);
+    const blob=await resp.blob();
+    cacheThemeAsset(url,blob);
+    const objUrl=URL.createObjectURL(blob);
+    _themeMemCache[url]=objUrl;
+    return objUrl;
+  }catch(networkErr){
+    const cached=await getCachedThemeAsset(url);
+    if(!cached) return null;
+    const objUrl=URL.createObjectURL(cached);
+    _themeMemCache[url]=objUrl;
+    return objUrl;
+  }
+}
 
 function clearThemeEffects(){
+  _themeImgToken=null;
+  _themeVidToken=null;
   if(_themeImgInterval){clearInterval(_themeImgInterval);_themeImgInterval=null}
   document.body.style.backgroundImage="";
   document.body.classList.remove("bg-video-active");
@@ -1584,28 +1647,58 @@ function applyTheme(mode){
     document.body.style.backgroundSize="cover";
     document.body.style.backgroundPosition="center";
     document.body.style.backgroundAttachment="fixed";
-    document.body.style.transition="background-image 1.2s ease";
+    document.body.style.transition="background-image 1s ease";
     _themeImgIdx=0;
-    const setImg=()=>{
-      document.body.style.backgroundImage="linear-gradient(rgba(8,8,8,.72),rgba(8,8,8,.72)), url('"+IMAGES[_themeImgIdx % IMAGES.length]+"')";
+    const myToken={};
+    _themeImgToken=myToken;
+    const setImg=async ()=>{
+      const url=IMAGES[_themeImgIdx % IMAGES.length];
       _themeImgIdx++;
+      const resolvedUrl=await resolveThemeAssetURL(url);
+      if(_themeImgToken!==myToken) return; // theme switched away while this was loading
+      if(resolvedUrl){
+        document.body.style.backgroundImage="linear-gradient(rgba(8,8,8,.72),rgba(8,8,8,.72)), url('"+resolvedUrl+"')";
+      }
+      // if unresolved (no network and nothing cached yet for this file), just
+      // keep whatever was showing and try the next one on the following tick
     };
     setImg();
     _themeImgInterval=setInterval(setImg,4000);
   } else if(mode==="video"){
     _bgVideoEl=document.createElement("video");
     _bgVideoEl.className="bg-video";
-    _bgVideoEl.autoplay=true;_bgVideoEl.muted=true;_bgVideoEl.playsInline=true;
-    _themeVidIdx=0;
-    _bgVideoEl.src=VIDEOS[_themeVidIdx % VIDEOS.length];
-    _bgVideoEl.addEventListener("ended",()=>{
-      _themeVidIdx++;
-      _bgVideoEl.src=VIDEOS[_themeVidIdx % VIDEOS.length];
-      _bgVideoEl.play().catch(()=>{});
-    });
+    _bgVideoEl.muted=true;_bgVideoEl.playsInline=true;
     document.body.prepend(_bgVideoEl);
     document.body.classList.add("bg-video-active");
-    _bgVideoEl.play().catch(()=>{});
+    _themeVidIdx=0;
+    const myToken={};
+    _themeVidToken=myToken;
+
+    const playIndex=async (i)=>{
+      if(_themeVidToken!==myToken) return;
+      const url=VIDEOS[i % VIDEOS.length];
+      _bgVideoEl.classList.remove("bg-video-visible"); // fade out while the next clip loads
+      const resolvedUrl=await resolveThemeAssetURL(url);
+      if(_themeVidToken!==myToken) return;
+      if(!resolvedUrl){
+        playIndex(i+1); // this clip is unavailable online or offline -- skip it
+        return;
+      }
+      _bgVideoEl.src=resolvedUrl;
+      _bgVideoEl.load();
+      const onReady=()=>{
+        _bgVideoEl.removeEventListener("loadeddata",onReady);
+        if(_themeVidToken!==myToken) return;
+        _bgVideoEl.play().catch(()=>{});
+        requestAnimationFrame(()=>_bgVideoEl.classList.add("bg-video-visible"));
+      };
+      _bgVideoEl.addEventListener("loadeddata",onReady);
+    };
+    _bgVideoEl.addEventListener("ended",()=>{
+      _themeVidIdx++;
+      playIndex(_themeVidIdx);
+    });
+    playIndex(_themeVidIdx);
   } else if(mode==="gradient"){
     document.body.style.background="linear-gradient(120deg,#080808,#1a0f2e,#0f2e2a,#080808)";
     document.body.style.backgroundSize="400% 400%";
