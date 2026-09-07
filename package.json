@@ -1,0 +1,9 @@
+{
+  "name": "prosafe-feedback",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ProSafe feedback form + Vercel serverless email endpoint (Resend API)",
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}

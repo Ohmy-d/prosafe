@@ -1,0 +1,9 @@
+# Belt-and-suspenders: .env.local is already excluded by Vercel's own
+# default ignore list, but list every variant explicitly here too --
+# especially plain ".env", which Vercel does NOT auto-exclude.
+.env
+.env.local
+.env.*.local
+.git
+.gitignore
+DEPLOY.md
