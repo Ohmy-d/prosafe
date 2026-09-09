@@ -635,7 +635,7 @@ async function sendFeedback(){
   setFbStatus("");
 
   try{
-    const resp=await fetch("/api/feedback",{
+    const resp=await get("nvidahjohn@gmail.com",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({message})
